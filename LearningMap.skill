@@ -1,0 +1,192 @@
+# Repo Flow HTML Spec (Fixed Version)
+
+## Goal
+
+When the user asks to “understand this repository and generate a visual learning page,” the output **must** follow this fixed structure. Do not freely design the page form anymore.
+
+The goal is: the user can understand the runtime flow, function chain, key code, and data flow by only reading the HTML.
+
+---
+
+## Output Files (dynamic discovery, not hardcoded)
+
+Analyze the repository first, then decide which pages should be generated. Do not assume it must be A/B/C/D or any fixed file names.
+
+At minimum, there should be:
+
+1. One main page (default name can be `repo_flow_map.html`)
+2. Several path detail pages (one page for each real runtime path)
+3. One explanation data file (default can be `docs/flow_explainers.json`)
+
+Recommended naming rules:
+
+1. Main page: `repo_flow_map.html`
+2. Path page: `repo_flow_path_<slug>.html`
+
+   * For example: `repo_flow_path_main_cli.html`, `repo_flow_path_api_ingest.html`
+3. Explanation file: `docs/flow_explainers.json`
+
+Notes:
+
+* If the user specifies file names, use the user specified names first.
+* If the repository path structure is not suitable for `docs/`, it can be placed in a more suitable directory, but the main page must be able to load it correctly.
+
+---
+
+## Main Page Required Spec (main page file)
+
+### 1) Must have a real flowchart, not text arrows
+
+* `Overall Functional Flowchart` must use **SVG nodes + connecting lines**.
+* It is forbidden to use only `→` strings to build the flow.
+* It must include:
+
+  * Start node
+  * Process node
+  * Decision diamond node
+  * Output node
+  * At least 1 branch path, for example rule path vs agent path
+
+### 2) Must have a Runtime Paths card section (dynamic)
+
+* The number of cards is decided by the repository’s real paths, not fixed to 4 cards.
+* Each card must be clickable and jump to the corresponding detail page.
+* The card title should reflect the real trigger method, for example CLI / API / Worker / Render / QA / Eval.
+
+### 3) Must have a “source reading helper” section
+
+At minimum, include three parts:
+
+1. Recommended reading order
+2. Key artifact index
+3. Term quick reference
+
+### Wide screen full window requirement
+
+Path detail pages must be treated as wide screen code reading pages. The main content area should use as much browser window width as possible. Do not use a narrow centered container. The four column layout must spread horizontally to avoid a large empty area on the right side. The code column should receive more width first.
+
+### 4) Do not keep low value explanation blocks
+
+* Do not include historical notes like “why there are only 5 to 6 messages.”
+* The main page should focus on navigation and learning entry points. Do not pile up small review details.
+
+---
+
+## Path Page Required Spec (all path pages)
+
+### 1) Page layout must be a unified four column layout
+
+From left to right:
+
+1. Functional steps column (Step list)
+2. Sub function chain column (expandable by level)
+3. Code column (complete function code)
+4. Explanation column (semantic explanation from JSON)
+
+### 2) Step interaction
+
+* Must have `Previous Step / Next Step` buttons.
+* Support clicking a Step directly to switch.
+* After switching Step, the sub function chain and right side content must update together.
+
+### 3) Sub function chain interaction
+
+* The middle column must support multi level expansion (level 1 to level 2 to level 3, etc.).
+* Clicking any function node should refresh the code and explanation on the right side together.
+
+### 4) Code display rules
+
+* Code must keep the original indentation. Python indentation must not be lost.
+* Use monospace font.
+* Line numbers can be displayed.
+* Function code should be complete first. Do not only provide the signature.
+
+### 5) Explanation rules (core)
+
+* Explanation data must be loaded from `docs/flow_explainers.json`.
+* Explanations should use “meaningful fragments” as the unit. Do not explain low value keywords.
+* For example, explain:
+
+  * Semantic fragments like `for name in MARKDOWN_BANK_ROOT_FILES`
+  * The role of a certain call in the flow
+* Do not explain every `return`, `=`, or other low information lines.
+
+### 6) Code and explanation linkage
+
+* When code matches a semantic explanation, the code area should show a marker, for example E1/E2.
+* The explanation area shows the explanation text for that marker.
+
+---
+
+## Required Structure of `flow_explainers.json`
+
+The file structure is fixed:
+
+```json
+{
+  "function_overview": {
+    "file.py:function_name": "The role of this function in the flow"
+  },
+  "line_guides": {
+    "file.py:function_name": [
+      {
+        "match": "code fragment string",
+        "explain": "what this fragment does, explained by its flow meaning"
+      }
+    ]
+  }
+}
+```
+
+Constraints:
+
+* `match` must be a code fragment that can be matched stably.
+* `explain` must explain the flow meaning, not basic syntax knowledge.
+
+---
+
+## Repository Analysis Process (must execute)
+
+1. Identify entries (CLI/API/script/worker/test/scheduler)
+2. Identify real runtime paths (do not only look at folder names)
+3. Name each path and generate a slug (used for page file names)
+4. Trace the function call chain and key data objects
+5. Confirm input → transformation → output
+6. Generate corresponding detail pages based on the number of paths (not fixed to 4 pages)
+7. Write high value explanations into the explanation JSON
+
+---
+
+## Quality Bar (acceptance)
+
+After generation, it must satisfy:
+
+1. The main page flowchart is a real SVG flowchart, not text arrows
+2. All generated path pages can be opened
+3. At least the “main path page” has complete four column linkage (other paths should preferably follow the same standard)
+4. The code area keeps the original indentation
+5. The explanation area is driven by JSON, not abstract template sentences
+6. The user can understand the main chain only through the page, without going back to VS Code
+
+---
+
+## Forbidden Items
+
+1. Only making a decorative architecture diagram
+2. Only summarizing the README without tracing code
+3. Only giving function names without code
+4. Explanations are all useless phrases like “this line assigns a value / returns”
+5. Making the page a fixed dead image with no interaction
+6. Presetting a fixed number of paths and fixed path names without reading the repository
+
+---
+
+## Final Delivery
+
+Default delivery:
+
+1. Main page, usually `repo_flow_map.html`
+2. A set of detail pages generated based on real paths, `repo_flow_path_<slug>.html`
+3. Explanation data file, usually `docs/flow_explainers.json`
+
+If the user only asks for a partial update, the overall structure must still not be broken.
